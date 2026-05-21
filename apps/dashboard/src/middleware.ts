@@ -5,9 +5,10 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
+  // @clerk/nextjs v5.6 et antérieures : auth est une fonction, protect est appelé sur le résultat.
   if (!isPublicRoute(req)) {
-    await auth.protect();
+    auth().protect();
   }
 });
 
