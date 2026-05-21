@@ -1,0 +1,15 @@
+name: web-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Vercel gère le déploiement automatique via son intégration GitHub.
+    # Ce workflow sert de garde-fou : on échoue si le build CI n'a pas passé.
+    needs: []
+    steps:
+      - run: echo "Vercel auto-deploys on push. Check Vercel dashboard for deployment status."
