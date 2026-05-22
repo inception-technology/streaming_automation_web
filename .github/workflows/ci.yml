@@ -33,7 +33,7 @@ jobs:
 
       - name: Build
         env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummyfortheci
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
           CLERK_SECRET_KEY: sk_test_dummyfortheci
           NEXT_PUBLIC_API_URL: http://localhost:8000
         run: pnpm build
