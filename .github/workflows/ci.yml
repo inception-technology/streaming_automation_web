@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 9.12.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: pnpm
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build
         env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummyfortheci
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
           CLERK_SECRET_KEY: sk_test_dummyfortheci
           NEXT_PUBLIC_API_URL: http://localhost:8000
         run: pnpm build
