@@ -22,6 +22,27 @@ Monorepo TypeScript du projet streaming_automation : dashboard Next.js (Phase 1)
 pnpm install
 ```
 
+## Variables d'environnement
+
+Toutes injectées par Doppler en local (`doppler run -- pnpm dev`), par
+l'intégration Doppler ↔ Vercel en preview/prod. Référence complète :
+[apps/dashboard/.env.example](apps/dashboard/.env.example).
+
+Préfixe `NEXT_PUBLIC_*` = exposé au bundle navigateur ; tout le reste reste
+côté serveur (Node runtime / Edge).
+
+| Variable                                              | Requise | Défaut       | Rôle                                                                     |
+|-------------------------------------------------------|---------|--------------|--------------------------------------------------------------------------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                   | **oui** | —            | Clé publique Clerk (`pk_test_…` / `pk_live_…`) — **même valeur** que `CLERK_PUBLISHABLE_KEY` côté `api/` |
+| `CLERK_SECRET_KEY`                                    | **oui** | —            | Clé secrète Clerk — server-side uniquement (`sk_test_…` / `sk_live_…`) — **même valeur** que `CLERK_SECRET_KEY` côté `api/` |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`                       | non     | `/sign-in`   | Route de la page sign-in (lue par `<ClerkProvider>`)                     |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`                       | non     | `/sign-up`   | Route de la page sign-up                                                 |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`     | non     | `/dashboard` | Redirection post sign-in si pas de `redirect_url`                        |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`     | non     | `/dashboard` | Redirection post sign-up si pas de `redirect_url`                        |
+| `NEXT_PUBLIC_API_URL`                                 | **oui** | —            | URL HTTPS de l'API FastAPI (ex. `http://localhost:8000`)                 |
+| `NEXT_PUBLIC_WS_URL`                                  | **oui** | —            | URL WebSocket de l'API (ex. `ws://localhost:8000`)                       |
+| `NEXT_PUBLIC_SENTRY_DSN`                              | non     | —            | DSN Sentry exposé au navigateur ; vide = désactivé                       |
+
 ## Lancer en dev
 
 ```powershell
