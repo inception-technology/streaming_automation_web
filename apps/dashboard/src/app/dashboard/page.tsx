@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 export default async function DashboardPage() {
@@ -22,11 +23,17 @@ export default async function DashboardPage() {
         </dl>
       </section>
       <section className="rounded border p-4">
-        <h2 className="font-medium">Phase 0</h2>
-        <p className="mt-2 text-sm">
-          Scaffolding en place. Les sections streams, content (Remotion), chat et workflows
-          arrivent en Phase 1.
+        <h2 className="font-medium">Streams</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Gestion des lives multi-plateformes : démarrage, monitoring temps réel via
+          WebSocket, arrêt propre via Temporal.
         </p>
+        <Link
+          href="/dashboard/streams"
+          className="mt-3 inline-block rounded bg-foreground px-3 py-1.5 text-sm text-background hover:opacity-90"
+        >
+          Ouvrir la liste des streams →
+        </Link>
       </section>
     </div>
   );
