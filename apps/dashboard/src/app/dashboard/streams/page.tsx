@@ -131,29 +131,53 @@ export default async function StreamsPage({ searchParams }: StreamsPageProps) {
 
 function LoadErrorBanner({ error }: { error: unknown }) {
   const status = error instanceof ApiError ? error.status : null;
+  const detail = error instanceof ApiError ? extractDetail(error.body) : null;
   const isAuth = status === 401 || status === 403;
   const isServerError = status !== null && status >= 500;
+
+  // Hint contextualisé en fonction du detail retourné par l'API. Plus précis que
+  // les hints génériques basés uniquement sur le code HTTP.
+  const knownDetail = detail?.toLowerCase() ?? "";
+  const isUnknownUser = knownDetail.includes("unknown") && knownDetail.includes("user");
+  const isInvalidToken = knownDetail.includes("invalid") && knownDetail.includes("token");
 
   return (
     <div className="space-y-2 rounded border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
       <div className="font-medium">
         Erreur de chargement{status !== null ? ` (${status})` : ""}
       </div>
-      {isAuth && (
-        <p>
-          Authentification refusée par l&apos;API. Vérifie que l&apos;instance Clerk du
-          dashboard ({process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0, 16)}…)
-          correspond bien à <code>CLERK_JWT_ISSUER</code> côté API. Cas typique :
-          dashboard preview (Clerk dev) qui parle à une API staging configurée avec
-          un autre issuer Clerk.
-        </p>
+      {detail && (
+        <div className="rounded border border-rose-300 bg-rose-100 px-2 py-1 font-mono text-xs">
+          {detail}
+        </div>
       )}
-      {isServerError && (
+      {isUnknownUser ? (
+        <p>
+          Ton utilisateur Clerk est authentifié mais introuvable dans la table{" "}
+          <code>users</code> de l&apos;API. Cause typique : le webhook Clerk{" "}
+          <code>user.created</code> n&apos;est pas configuré pour POST vers{" "}
+          <code>/webhooks/clerk</code> sur cet environnement (Clerk Dashboard → Webhooks).
+          Workaround temporaire : insérer manuellement la row dans la DB ou
+          rejouer le webhook depuis Clerk.
+        </p>
+      ) : isInvalidToken ? (
+        <p>
+          Le JWT envoyé n&apos;est pas accepté. Vérifie que{" "}
+          <code>CLERK_JWT_ISSUER</code> côté API matche l&apos;instance Clerk du
+          dashboard ({process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0, 16)}…).
+        </p>
+      ) : isAuth ? (
+        <p>
+          Authentification refusée par l&apos;API. Le JWT côté dashboard utilise
+          l&apos;instance Clerk{" "}
+          <code>{process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0, 16)}…</code>{" "}
+          — vérifie que <code>CLERK_JWT_ISSUER</code> côté API matche.
+        </p>
+      ) : isServerError ? (
         <p>
           L&apos;API a renvoyé une erreur serveur. Regarde les logs Railway / Sentry.
         </p>
-      )}
-      {!isAuth && !isServerError && (
+      ) : (
         <p>
           Vérifie que <code>NEXT_PUBLIC_API_URL</code> pointe vers une API joignable
           depuis le runtime serveur (et pas <code>localhost</code> en preview).
@@ -165,6 +189,29 @@ function LoadErrorBanner({ error }: { error: unknown }) {
       </p>
     </div>
   );
+}
+
+/** Extrait le `detail` d'une réponse FastAPI HTTPException. Tolère :
+ * - body déjà parsé (objet)
+ * - body string JSON (`{"detail": "..."}`)
+ * - body string brut (renvoie tel quel, tronqué à 200 chars). */
+function extractDetail(body: unknown): string | null {
+  if (body == null) return null;
+  if (typeof body === "object" && "detail" in body) {
+    const d = (body as { detail: unknown }).detail;
+    return typeof d === "string" ? d : JSON.stringify(d);
+  }
+  if (typeof body !== "string") return null;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (parsed && typeof parsed === "object" && "detail" in parsed) {
+      const d = (parsed as { detail: unknown }).detail;
+      return typeof d === "string" ? d : JSON.stringify(d);
+    }
+  } catch {
+    // body n'est pas du JSON — on le renvoie brut (tronqué).
+  }
+  return body.slice(0, 200);
 }
 
 function StatusFilter({ active }: { active?: StreamStatus }) {
