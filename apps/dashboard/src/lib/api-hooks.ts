@@ -16,11 +16,14 @@ import { apiFetch } from "./api-client";
 import type {
   AssetKind,
   AssetList,
+  PlatformList,
   Stream,
   StreamCreate,
   StreamList,
   StreamStartResponse,
   StreamStopResponse,
+  StreamTarget,
+  StreamTargetCreate,
   StreamTargetList,
 } from "./types";
 
@@ -103,6 +106,46 @@ export function useAssets(
     queryKey: ["assets", params],
     queryFn: () => fetcher<AssetList>(`/assets${qs ? `?${qs}` : ""}`),
     ...options,
+  });
+}
+
+export function usePlatforms(
+  options?: Partial<UseQueryOptions<PlatformList>>,
+) {
+  const fetcher = useAuthedFetch();
+  return useQuery<PlatformList>({
+    queryKey: ["platforms"],
+    queryFn: () => fetcher<PlatformList>(`/platforms?limit=100`),
+    ...options,
+  });
+}
+
+export function useAddTarget(streamId: string) {
+  const fetcher = useAuthedFetch();
+  const qc = useQueryClient();
+  return useMutation<StreamTarget, Error, StreamTargetCreate>({
+    mutationFn: (payload) =>
+      fetcher<StreamTarget>(`/streams/${streamId}/targets`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stream-targets", streamId] });
+    },
+  });
+}
+
+export function useRemoveTarget(streamId: string) {
+  const fetcher = useAuthedFetch();
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (targetId) =>
+      fetcher<void>(`/streams/${streamId}/targets/${targetId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stream-targets", streamId] });
+    },
   });
 }
 

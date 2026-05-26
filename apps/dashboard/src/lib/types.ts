@@ -65,14 +65,35 @@ export interface StreamTargetList {
   total: number;
 }
 
+export type PlatformProvider = "youtube" | "twitch" | "facebook_live";
+
+// Miroir de PlatformRead côté API. Les tokens OAuth ne sont JAMAIS exposés
+// dans la réponse — accessibles uniquement côté serveur (chiffrés Fernet).
 export interface Platform {
   id: string;
-  provider: string;
-  account_label: string | null;
+  provider: PlatformProvider;
+  account_id: string;
+  display_name: string;
+  connected_by_user_id: string;
+  oauth_expires_at: string | null;
+  scopes: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export interface PlatformList {
+  items: Platform[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// Payload pour POST /streams/{id}/targets. Deux modes mutuellement exclusifs
+// (cf. api#18) : OAuth (platform_id seul) ou manuel (rtmp_url + stream_key).
+export type StreamTargetCreate =
+  | { platform_id: string }
+  | { rtmp_url: string; stream_key: string };
 
 export interface StreamStartResponse {
   stream_id: string;
