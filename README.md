@@ -39,9 +39,8 @@ côté serveur (Node runtime / Edge).
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL`                       | non     | `/sign-up`   | Route de la page sign-up                                                 |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`     | non     | `/dashboard` | Redirection post sign-in si pas de `redirect_url`                        |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`     | non     | `/dashboard` | Redirection post sign-up si pas de `redirect_url`                        |
-| `NEXT_PUBLIC_API_URL`                                 | **oui** | —            | URL HTTPS de l'API FastAPI (ex. `http://localhost:8000`)                 |
-| `NEXT_PUBLIC_WS_URL`                                  | **oui** | —            | URL WebSocket de l'API (ex. `ws://localhost:8000`)                       |
-| `NEXT_PUBLIC_SENTRY_DSN`                              | non     | —            | DSN Sentry exposé au navigateur ; vide = désactivé                       |
+| `NEXT_PUBLIC_API_URL`                                 | **oui** | —            | URL HTTP(S) de l'API FastAPI (ex. `http://localhost:8000` en dev, `https://api-staging.keekku.com` en preview). L'URL WebSocket est dérivée automatiquement (`http→ws`, `https→wss`) — pas de variable séparée. |
+| `NEXT_PUBLIC_SENTRY_DSN`                              | non     | —            | DSN Sentry exposé au navigateur ; vide = désactivé. *Non branché côté code actuellement — réservé pour Phase 1+.* |
 
 ## Lancer en dev
 
