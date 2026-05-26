@@ -35,93 +35,134 @@ export default async function StreamsPage({ searchParams }: StreamsPageProps) {
       ? (searchParams.status as StreamStatus)
       : undefined;
 
-  let data: StreamList;
+  let data: StreamList | null = null;
+  let loadError: unknown = null;
   try {
     const qs = new URLSearchParams();
     if (statusFilter) qs.set("status", statusFilter);
     qs.set("limit", "50");
     data = await apiServerFetch<StreamList>(`/streams?${qs.toString()}`);
   } catch (err) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Streams</h1>
-        <div className="rounded border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          Erreur de chargement{" "}
-          {err instanceof ApiError ? `(${err.status})` : ""} — vérifie que l&apos;API est
-          accessible (NEXT_PUBLIC_API_URL).
-        </div>
-      </div>
-    );
+    loadError = err;
   }
 
   return (
     <div className="space-y-4">
+      {/* Header — visible quel que soit l'état (succès ou erreur). Le bouton
+          'Nouveau stream' reste donc accessible même si /streams plante :
+          créer un stream n'a pas besoin du listing pour fonctionner. */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Streams</h1>
-          <p className="text-sm text-muted-foreground">
-            {data.total} {data.total > 1 ? "streams enregistrés" : "stream enregistré"}.
-          </p>
+          {data && (
+            <p className="text-sm text-muted-foreground">
+              {data.total} {data.total > 1 ? "streams enregistrés" : "stream enregistré"}.
+            </p>
+          )}
         </div>
         <NewStreamButton />
       </div>
 
-      <StatusFilter active={statusFilter} />
-
-      {data.items.length === 0 ? (
-        <div className="rounded border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Aucun stream {statusFilter ? `avec le statut ${statusFilter}` : ""}.
-        </div>
+      {loadError ? (
+        <LoadErrorBanner error={loadError} />
       ) : (
-        <div className="overflow-x-auto rounded border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 font-medium">Titre</th>
-                <th className="px-4 py-2 font-medium">Statut</th>
-                <th className="px-4 py-2 font-medium">Programmé</th>
-                <th className="px-4 py-2 font-medium">Démarré</th>
-                <th className="px-4 py-2 font-medium">Terminé</th>
-                <th className="px-4 py-2 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.map((stream) => (
-                <tr key={stream.id} className="border-t">
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`/dashboard/streams/${stream.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {stream.title}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2">
-                    <StatusBadge status={stream.status} />
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {formatDate(stream.scheduled_at)}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {formatDate(stream.started_at)}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {formatDate(stream.ended_at)}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
-                      href={`/dashboard/streams/${stream.id}`}
-                      className="text-xs text-muted-foreground hover:underline"
-                    >
-                      Détails →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <StatusFilter active={statusFilter} />
+
+          {data!.items.length === 0 ? (
+            <div className="rounded border border-dashed p-8 text-center text-sm text-muted-foreground">
+              Aucun stream {statusFilter ? `avec le statut ${statusFilter}` : ""}.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-left text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Titre</th>
+                    <th className="px-4 py-2 font-medium">Statut</th>
+                    <th className="px-4 py-2 font-medium">Programmé</th>
+                    <th className="px-4 py-2 font-medium">Démarré</th>
+                    <th className="px-4 py-2 font-medium">Terminé</th>
+                    <th className="px-4 py-2 font-medium" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {data!.items.map((stream) => (
+                    <tr key={stream.id} className="border-t">
+                      <td className="px-4 py-2">
+                        <Link
+                          href={`/dashboard/streams/${stream.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {stream.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2">
+                        <StatusBadge status={stream.status} />
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {formatDate(stream.scheduled_at)}
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {formatDate(stream.started_at)}
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {formatDate(stream.ended_at)}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <Link
+                          href={`/dashboard/streams/${stream.id}`}
+                          className="text-xs text-muted-foreground hover:underline"
+                        >
+                          Détails →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+function LoadErrorBanner({ error }: { error: unknown }) {
+  const status = error instanceof ApiError ? error.status : null;
+  const isAuth = status === 401 || status === 403;
+  const isServerError = status !== null && status >= 500;
+
+  return (
+    <div className="space-y-2 rounded border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+      <div className="font-medium">
+        Erreur de chargement{status !== null ? ` (${status})` : ""}
+      </div>
+      {isAuth && (
+        <p>
+          Authentification refusée par l&apos;API. Vérifie que l&apos;instance Clerk du
+          dashboard ({process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0, 16)}…)
+          correspond bien à <code>CLERK_JWT_ISSUER</code> côté API. Cas typique :
+          dashboard preview (Clerk dev) qui parle à une API staging configurée avec
+          un autre issuer Clerk.
+        </p>
+      )}
+      {isServerError && (
+        <p>
+          L&apos;API a renvoyé une erreur serveur. Regarde les logs Railway / Sentry.
+        </p>
+      )}
+      {!isAuth && !isServerError && (
+        <p>
+          Vérifie que <code>NEXT_PUBLIC_API_URL</code> pointe vers une API joignable
+          depuis le runtime serveur (et pas <code>localhost</code> en preview).
+        </p>
+      )}
+      <p className="text-xs text-rose-600/80">
+        Tu peux quand même créer un stream via le bouton ci-dessus — la création
+        passe par le runtime client et n&apos;a pas besoin du listing.
+      </p>
     </div>
   );
 }
