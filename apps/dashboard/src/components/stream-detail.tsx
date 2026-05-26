@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { AddTargetButton } from "@/components/add-target-button";
+import { MediaMtxPresetButton } from "@/components/mediamtx-preset-button";
 import { StatusBadge } from "@/components/status-badge";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -124,7 +125,10 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
       <section className="rounded border">
         <header className="flex items-center justify-between border-b px-4 py-2">
           <h2 className="text-sm font-medium">Cibles ({targets.total})</h2>
-          <AddTargetButton streamId={streamId} disabled={targetsLocked} />
+          <div className="flex items-start gap-2">
+            <MediaMtxPresetButton streamId={streamId} disabled={targetsLocked} />
+            <AddTargetButton streamId={streamId} disabled={targetsLocked} />
+          </div>
         </header>
         {removeMut.error && (
           <div className="border-b border-rose-200 bg-rose-50 px-4 py-2 text-xs text-rose-700">
