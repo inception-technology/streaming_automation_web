@@ -3,9 +3,11 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { AddTargetButton } from "@/components/add-target-button";
 import { StatusBadge } from "@/components/status-badge";
 import { ApiError } from "@/lib/api-client";
 import {
+  useRemoveTarget,
   useStartStream,
   useStopStream,
   useStream,
@@ -46,6 +48,17 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
 
   const startMut = useStartStream(streamId);
   const stopMut = useStopStream(streamId);
+  const removeMut = useRemoveTarget(streamId);
+
+  // Pendant un live, on désactive l'ajout/suppression de cibles : modifier la
+  // composition pendant que FFmpeg pousse n'a pas de sens — il faudrait au
+  // moins un arrêt propre du process correspondant.
+  const targetsLocked = stream.status === "live";
+
+  function handleDelete(targetId: string) {
+    if (!confirm("Retirer cette cible du stream ?")) return;
+    removeMut.mutate(targetId);
+  }
 
   return (
     <div className="space-y-6">
@@ -111,7 +124,13 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
       <section className="rounded border">
         <header className="flex items-center justify-between border-b px-4 py-2">
           <h2 className="text-sm font-medium">Cibles ({targets.total})</h2>
+          <AddTargetButton streamId={streamId} disabled={targetsLocked} />
         </header>
+        {removeMut.error && (
+          <div className="border-b border-rose-200 bg-rose-50 px-4 py-2 text-xs text-rose-700">
+            Erreur suppression : {formatMutationError(removeMut.error)}
+          </div>
+        )}
         {targets.items.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
             Aucune cible attachée. Ajoute une plateforme avant de démarrer le live.
@@ -123,7 +142,7 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-muted-foreground">
-                      {t.platform_id.slice(0, 8)}
+                      {t.platform_id ? t.platform_id.slice(0, 8) : "custom RTMP"}
                     </span>
                     <StatusBadge status={t.status} />
                   </div>
@@ -136,9 +155,39 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
                     <div className="mt-1 text-xs text-rose-600">{t.error_message}</div>
                   )}
                 </div>
-                <div className="text-right text-xs text-muted-foreground">
-                  <div>début : {formatDate(t.started_at)}</div>
-                  <div>fin : {formatDate(t.ended_at)}</div>
+                <div className="flex items-start gap-3">
+                  <div className="text-right text-xs text-muted-foreground">
+                    <div>début : {formatDate(t.started_at)}</div>
+                    <div>fin : {formatDate(t.ended_at)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(t.id)}
+                    disabled={targetsLocked || removeMut.isPending}
+                    title={
+                      targetsLocked
+                        ? "Impossible pendant un live en cours"
+                        : "Retirer cette cible"
+                    }
+                    className="rounded p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    aria-label="Retirer cette cible"
+                  >
+                    {/* Icône poubelle inline (évite une dépendance d'icônes). */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
                 </div>
               </li>
             ))}

@@ -14,10 +14,16 @@ import {
 
 import { apiFetch } from "./api-client";
 import type {
+  AssetKind,
+  AssetList,
+  PlatformList,
   Stream,
+  StreamCreate,
   StreamList,
   StreamStartResponse,
   StreamStopResponse,
+  StreamTarget,
+  StreamTargetCreate,
   StreamTargetList,
 } from "./types";
 
@@ -67,6 +73,79 @@ export function useStreams(
     queryKey: ["streams", params],
     queryFn: () => fetcher<StreamList>(`/streams${qs ? `?${qs}` : ""}`),
     ...options,
+  });
+}
+
+export function useCreateStream() {
+  const fetcher = useAuthedFetch();
+  const qc = useQueryClient();
+  return useMutation<Stream, Error, StreamCreate>({
+    mutationFn: (payload) =>
+      fetcher<Stream>(`/streams`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      // Toutes les variantes de filtres sur ['streams', ...] doivent se rafraîchir.
+      qc.invalidateQueries({ queryKey: ["streams"] });
+    },
+  });
+}
+
+export function useAssets(
+  params: { kind?: AssetKind; limit?: number; offset?: number } = {},
+  options?: Partial<UseQueryOptions<AssetList>>,
+) {
+  const fetcher = useAuthedFetch();
+  const query = new URLSearchParams();
+  if (params.kind) query.set("kind", params.kind);
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
+  const qs = query.toString();
+  return useQuery<AssetList>({
+    queryKey: ["assets", params],
+    queryFn: () => fetcher<AssetList>(`/assets${qs ? `?${qs}` : ""}`),
+    ...options,
+  });
+}
+
+export function usePlatforms(
+  options?: Partial<UseQueryOptions<PlatformList>>,
+) {
+  const fetcher = useAuthedFetch();
+  return useQuery<PlatformList>({
+    queryKey: ["platforms"],
+    queryFn: () => fetcher<PlatformList>(`/platforms?limit=100`),
+    ...options,
+  });
+}
+
+export function useAddTarget(streamId: string) {
+  const fetcher = useAuthedFetch();
+  const qc = useQueryClient();
+  return useMutation<StreamTarget, Error, StreamTargetCreate>({
+    mutationFn: (payload) =>
+      fetcher<StreamTarget>(`/streams/${streamId}/targets`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stream-targets", streamId] });
+    },
+  });
+}
+
+export function useRemoveTarget(streamId: string) {
+  const fetcher = useAuthedFetch();
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (targetId) =>
+      fetcher<void>(`/streams/${streamId}/targets/${targetId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stream-targets", streamId] });
+    },
   });
 }
 
