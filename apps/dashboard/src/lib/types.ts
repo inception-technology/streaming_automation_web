@@ -36,10 +36,20 @@ export interface StreamList {
   offset: number;
 }
 
+// Payload pour POST /streams. Tous les champs sauf `title` sont optionnels.
+export interface StreamCreate {
+  title: string;
+  description?: string | null;
+  scheduled_at?: string | null; // ISO 8601
+  source_asset_id?: string | null;
+}
+
 export interface StreamTarget {
   id: string;
   stream_id: string;
-  platform_id: string;
+  // Nullable depuis api#18 — les targets manuelles (custom RTMP, ex. MediaMTX)
+  // n'ont pas de Platform OAuth associée.
+  platform_id: string | null;
   platform_stream_id: string | null;
   rtmp_url: string | null;
   status: StreamTargetStatus;
@@ -75,6 +85,34 @@ export interface StreamStopResponse {
   stream_id: string;
   temporal_workflow_id: string;
   signal_sent: "end_stream";
+}
+
+// ---------- Assets ----------
+
+export type AssetKind = "video" | "image" | "overlay" | "render";
+export type AssetBucket = "assets" | "renders" | "replays";
+
+export interface Asset {
+  id: string;
+  kind: AssetKind;
+  bucket: AssetBucket;
+  r2_key: string;
+  mime_type: string;
+  size_bytes: number;
+  duration_ms: number | null;
+  width: number | null;
+  height: number | null;
+  uploaded_by_user_id: string | null;
+  asset_metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetList {
+  items: Asset[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 // Events poussés par la WebSocket /ws/streams/{id}.

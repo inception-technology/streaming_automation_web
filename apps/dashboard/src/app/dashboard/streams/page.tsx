@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NewStreamButton } from "@/components/new-stream-button";
 import { StatusBadge } from "@/components/status-badge";
 import { apiServerFetch } from "@/lib/api-server";
 import { ApiError } from "@/lib/api-client";
@@ -62,6 +63,7 @@ export default async function StreamsPage({ searchParams }: StreamsPageProps) {
             {data.total} {data.total > 1 ? "streams enregistrés" : "stream enregistré"}.
           </p>
         </div>
+        <NewStreamButton />
       </div>
 
       <StatusFilter active={statusFilter} />

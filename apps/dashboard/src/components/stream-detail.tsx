@@ -123,7 +123,7 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-muted-foreground">
-                      {t.platform_id.slice(0, 8)}
+                      {t.platform_id ? t.platform_id.slice(0, 8) : "custom RTMP"}
                     </span>
                     <StatusBadge status={t.status} />
                   </div>
