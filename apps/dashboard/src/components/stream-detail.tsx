@@ -56,6 +56,28 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
   // moins un arrêt propre du process correspondant.
   const targetsLocked = stream.status === "live";
 
+  // Un stream programmé pour plus tard est démarrable, mais le bouton démarre
+  // IMMÉDIATEMENT (pas de scheduler qui attend scheduled_at en V1). On signale
+  // ce raccourci avec un confirm pour éviter la surprise.
+  const scheduledInFuture =
+    stream.scheduled_at !== null && new Date(stream.scheduled_at) > new Date();
+
+  function handleStart() {
+    if (scheduledInFuture) {
+      const formatted = formatDate(stream.scheduled_at);
+      if (
+        !confirm(
+          `Ce stream est programmé pour ${formatted}.\n\n` +
+            `Le démarrage est immédiat — le scheduler automatique n'est pas encore actif. ` +
+            `Démarrer maintenant ?`,
+        )
+      ) {
+        return;
+      }
+    }
+    startMut.mutate();
+  }
+
   function handleDelete(targetId: string) {
     if (!confirm("Retirer cette cible du stream ?")) return;
     removeMut.mutate(targetId);
@@ -80,11 +102,16 @@ export function StreamDetail({ initialStream, initialTargets }: StreamDetailProp
           {STARTABLE_STATUSES.has(stream.status) && (
             <button
               type="button"
-              onClick={() => startMut.mutate()}
+              onClick={handleStart}
               disabled={startMut.isPending}
+              title={
+                scheduledInFuture
+                  ? `Démarre immédiatement (ignore la programmation ${formatDate(stream.scheduled_at)})`
+                  : "Démarrer la diffusion maintenant"
+              }
               className="rounded bg-foreground px-3 py-1.5 text-sm text-background hover:opacity-90 disabled:opacity-50"
             >
-              {startMut.isPending ? "Démarrage…" : "Démarrer"}
+              {startMut.isPending ? "Démarrage…" : "Démarrer maintenant"}
             </button>
           )}
           {stream.status === "live" && (
